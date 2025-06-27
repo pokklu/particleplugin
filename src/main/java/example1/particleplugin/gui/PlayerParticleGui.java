@@ -11,6 +11,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
+import static example1.particleplugin.gui.EmoteCategoryGui.createItem;
+
 public class PlayerParticleGui {
 
     private static final Map<Particle, Material> particleIcons = new LinkedHashMap<>();
@@ -55,7 +57,7 @@ public class PlayerParticleGui {
         // 必要なら追加
     }
 
-    private static ItemStack createNavigationItem(Material material, String name) {
+    public static ItemStack createNavigationItem(Material material, String name) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -67,8 +69,9 @@ public class PlayerParticleGui {
 
     public static void open(Player player, int page) {
         int itemsPerPage = 36;
+        int slot = 0;
         int totalItems = particleIcons.size();
-        int totalPages = (int) Math.ceil((double) totalItems / itemsPerPage) + 1;  // +1 は色付きDUSTページ分
+        int totalPages = (int) Math.ceil((double) totalItems / itemsPerPage) + 1;
 
         if (page < 1) page = 1;
         if (page > totalPages) page = totalPages;
@@ -76,8 +79,7 @@ public class PlayerParticleGui {
         Inventory gui = Bukkit.createInventory(null, 54, "プレイヤーエモート - ページ " + page);
 
         if (page == totalPages) {
-            // 色付きDUSTページ（最終ページ）
-            int slot = 0;
+            gui.setItem(slot++, createItem(Material.WHITE_WOOL, "§bDUST: 虹色"));
             for (Map.Entry<String, Particle.DustOptions> entry : DustColorPresets.COLORS.entrySet()) {
                 String name = entry.getKey();
                 Material icon = switch (name) {
@@ -89,7 +91,6 @@ public class PlayerParticleGui {
                     case "オレンジ" -> Material.ORANGE_DYE;
                     default -> Material.GRAY_DYE;
                 };
-
                 ItemStack item = new ItemStack(icon);
                 ItemMeta meta = item.getItemMeta();
                 if (meta != null) {
@@ -98,21 +99,16 @@ public class PlayerParticleGui {
                 }
                 gui.setItem(slot++, item);
             }
-            // ナビゲーション
-            if (page > 1) {
-                gui.setItem(45, createNavigationItem(Material.ARROW, "前のページ"));
-            }
+            if (page > 1) gui.setItem(45, createNavigationItem(Material.ARROW, "前のページ"));
             gui.setItem(49, createNavigationItem(Material.BARRIER, "§cカテゴリに戻る"));
-
             player.openInventory(gui);
             return;
         }
 
-        // 通常パーティクルページ
+        // 通常ページのパーティクル表示
         List<Map.Entry<Particle, Material>> entries = new ArrayList<>(particleIcons.entrySet());
         int start = (page - 1) * itemsPerPage;
         int end = Math.min(start + itemsPerPage, totalItems);
-
         for (int i = start; i < end; i++) {
             Map.Entry<Particle, Material> entry = entries.get(i);
             Particle particle = entry.getKey();
@@ -128,13 +124,8 @@ public class PlayerParticleGui {
         }
 
         gui.setItem(49, createNavigationItem(Material.BARRIER, "§cカテゴリに戻る"));
-
-        if (page > 1) {
-            gui.setItem(45, createNavigationItem(Material.ARROW, "前のページ"));
-        }
-        if (page < totalPages) {
-            gui.setItem(53, createNavigationItem(Material.ARROW, "次のページ"));
-        }
+        if (page > 1) gui.setItem(45, createNavigationItem(Material.ARROW, "前のページ"));
+        if (page < totalPages) gui.setItem(53, createNavigationItem(Material.ARROW, "次のページ"));
 
         player.openInventory(gui);
     }

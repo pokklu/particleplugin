@@ -21,7 +21,7 @@ public class EmoteCategoryGui {
         player.openInventory(gui);
     }
 
-    private static ItemStack createItem(Material material, String name) {
+    static ItemStack createItem(Material material, String name) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
