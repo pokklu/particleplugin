@@ -1,0 +1,11 @@
+name: ParticlePlugin
+version: 1.0
+main: example1.particleplugin.Particleplugin
+api-version: 1.20
+
+commands:
+  gui:
+    description: パーティクル設定GUIを開くコマンド
+    usage: /gui
+    permission: particleplugin.gui
+    permission-message: "§c権限がありません。"
