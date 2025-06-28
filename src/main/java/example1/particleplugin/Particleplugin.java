@@ -45,7 +45,7 @@ public final class Particleplugin extends JavaPlugin {
                         if (PlayerSettings.isRainbowMode(player)) {
                             options = PlayerSettings.getNextRainbowOption(player); // 虹色の次の色を取得
                         } else {
-                            options = PlayerSettings.getDustOptions(player); // 通常色
+                            options = PlayerSettings.getDustOption(player); // ✅ 1つだけ取得するメソッドに変更
                         }
 
                         player.getWorld().spawnParticle(
