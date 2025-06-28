@@ -11,6 +11,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
+import static example1.particleplugin.gui.PlayerParticleGui.particleIcons;
+
 public class GuiClickListener implements Listener {
 
     @EventHandler
@@ -145,5 +147,10 @@ public class GuiClickListener implements Listener {
                 player.sendMessage("無効なパーティクルです: " + clickName);
             }
         }
+    }
+    public static int getTotalPages() {
+        int itemsPerPage = 36;
+        int totalItems = particleIcons.size();
+        return (int) Math.ceil((double) totalItems / itemsPerPage) + 1;  // +1 はDUST色のページ
     }
 }

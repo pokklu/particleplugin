@@ -15,7 +15,7 @@ import static example1.particleplugin.gui.EmoteCategoryGui.createItem;
 
 public class PlayerParticleGui {
 
-    private static final Map<Particle, Material> particleIcons = new LinkedHashMap<>();
+    public static final Map<Particle, Material> particleIcons = new LinkedHashMap<>();
 
     static {
         particleIcons.put(Particle.FLAME, Material.BLAZE_POWDER);
@@ -128,5 +128,14 @@ public class PlayerParticleGui {
         if (page < totalPages) gui.setItem(53, createNavigationItem(Material.ARROW, "次のページ"));
 
         player.openInventory(gui);
+    }
+    public static int getTotalPages() {
+        int itemsPerPage = 36;
+        int totalItems = getParticleIcons().size();
+        return (int) Math.ceil((double) totalItems / itemsPerPage) + 1;  // DUSTページ含む
+    }
+
+    public static Map<Particle, Material> getParticleIcons() {
+        return particleIcons;
     }
 }
