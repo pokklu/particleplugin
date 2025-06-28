@@ -19,6 +19,7 @@ public class PlayerSettings {
     private static final Map<UUID, Particle.DustOptions> dustOptionsMap = new HashMap<>();
     private static final Map<UUID, Boolean> rainbowModeMap = new HashMap<>();
     private static final Map<UUID, Integer> rainbowIndexMap = new HashMap<>();
+    private static final Map<UUID, Set<Particle>> selectedParticles = new HashMap<>();
 
 
 
@@ -86,5 +87,22 @@ public class PlayerSettings {
     public static Particle.DustOptions getDustOption(Player player) {
         return dustOptionsMap.getOrDefault(player.getUniqueId(),
                 new Particle.DustOptions(Color.WHITE, 1.0F));
+    }
+    public static void setParticleSelection(Player player, Particle particle) {
+        Set<Particle> set = selectedParticles.getOrDefault(player.getUniqueId(), new HashSet<>());
+        if (set.contains(particle)) {
+            set.remove(particle); // もう一度押したら解除
+        } else {
+            if (set.size() >= 2) return; // 最大2個まで
+            set.add(particle);
+        }
+        selectedParticles.put(player.getUniqueId(), set);
+    }
+
+    public static Set<Particle> getSelectedParticles(Player player) {
+        return selectedParticles.getOrDefault(player.getUniqueId(), Set.of());
+    }
+    public static void clearSelectedParticles(Player player) {
+        selectedParticles.remove(player.getUniqueId());
     }
 }

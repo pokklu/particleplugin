@@ -11,13 +11,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 public class GuiClickListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
-
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null || clicked.getType() == Material.AIR) return;
         if (!clicked.hasItemMeta() || !clicked.getItemMeta().hasDisplayName()) return;
@@ -27,56 +30,7 @@ public class GuiClickListener implements Listener {
 
         event.setCancelled(true);
 
-        // --- DUST 色選択（基本色ページ） ---
-        if (title.equals("DUST色を選択 - 基本色")) {
-            if (clickName.equals("§d虹色を選択")) {
-                RainbowDustGui.open(player);
-                return;
-            }
-
-            String colorName = clickName.replace("§6", "").trim();
-            if (DustColorPresets.COLORS.containsKey(colorName)) {
-                PlayerSettings.setDustOptions(player, DustColorPresets.COLORS.get(colorName));
-                PlayerSettings.setRainbowMode(player, false);
-                PlayerSettings.setParticle(player, Particle.DUST);
-                player.sendMessage(colorName + " のDUST色を選択しました！");
-                player.closeInventory();
-                return;
-            }
-        }
-
-        // --- 虹色選択GUI ---
-        if (title.equals("虹色DUSTを選択")) {
-            if (clickName.equals("§c戻る")) {
-                DustColorGui.open(player);
-                return;
-            }
-
-            PlayerSettings.setRainbowMode(player, true);
-            PlayerSettings.setParticle(player, Particle.DUST);
-            player.sendMessage("虹色DUSTパーティクルを選択しました！");
-            player.closeInventory();
-            return;
-        }
-
-        // --- カテゴリ戻るボタン ---
-        if (clicked.getType() == Material.BARRIER && clickName.equals("§cカテゴリに戻る")) {
-            EmoteCategoryGui.open(player);
-            return;
-        }
-
-        // --- カテゴリ選択画面 ---
-        if (title.equals("エモートカテゴリを選択")) {
-            if (clickName.equals("プレイヤーのエモート")) {
-                PlayerParticleGui.open(player, 1);
-            } else if (clickName.equals("ブロック破壊のエモート")) {
-                BlockBreakParticleGui.open(player);
-            }
-            return;
-        }
-
-        // --- プレイヤーエモートページ ---
-        if (title.startsWith("プレイヤーエモート")) {
+        if (title.contains("プレイヤーエモート")) {
             int page = 1;
             try {
                 page = Integer.parseInt(title.replace("プレイヤーエモート - ページ ", ""));
@@ -114,7 +68,7 @@ public class GuiClickListener implements Listener {
                 }
             }
 
-            // DUST選択されたとき：色選択GUIへ遷移
+            // DUST以外のパーティクル選択（複数選択対応）
             if (page != totalPages) {
                 String particleName = clickName.replace("§b", "");
                 if (particleName.equals("DUST")) {
@@ -124,17 +78,76 @@ public class GuiClickListener implements Listener {
 
                 try {
                     Particle selected = Particle.valueOf(particleName);
-                    PlayerSettings.setParticle(player, selected);
-                    player.sendMessage(selected.name() + " を選択しました！");
+
+                    // 左クリック → 単体選択（複数選択はクリア）
+                    if (event.isLeftClick()) {
+                        PlayerSettings.setParticle(player, selected);
+                        PlayerSettings.clearSelectedParticles(player);
+                        player.sendMessage("§aパーティクルを1種類に設定: " + selected.name());
+                    }
+
+                    // 右クリック → 最大2つまでトグル選択
+                    else if (event.isRightClick()) {
+                        PlayerSettings.setParticleSelection(player, selected);
+                        player.sendMessage("§aパーティクルを複数選択: " + selected.name());
+                    }
+
                     player.closeInventory();
+                    return;
+
                 } catch (IllegalArgumentException e) {
                     player.sendMessage("無効なパーティクルです。");
                 }
+            }
+        }
+
+        // DUST色選択GUI
+        if (title.equals("DUST色を選択 - 基本色")) {
+            if (clickName.equals("§d虹色を選択")) {
+                RainbowDustGui.open(player);
+                return;
+            }
+
+            String colorName = clickName.replace("§6", "").trim();
+            if (DustColorPresets.COLORS.containsKey(colorName)) {
+                PlayerSettings.setDustOptions(player, DustColorPresets.COLORS.get(colorName));
+                PlayerSettings.setRainbowMode(player, false);
+                PlayerSettings.setParticle(player, Particle.DUST);
+                player.sendMessage(colorName + " のDUST色を選択しました！");
+                player.closeInventory();
                 return;
             }
         }
 
-        // --- ブロック破壊パーティクル選択 ---
+        // 虹色DUST選択GUI
+        if (title.equals("虹色DUSTを選択")) {
+            if (clickName.equals("§c戻る")) {
+                DustColorGui.open(player);
+                return;
+            }
+
+            PlayerSettings.setRainbowMode(player, true);
+            PlayerSettings.setParticle(player, Particle.DUST);
+            player.sendMessage("虹色DUSTパーティクルを選択しました！");
+            player.closeInventory();
+            return;
+        }
+
+        // カテゴリ戻るボタン
+        if (clicked.getType() == Material.BARRIER && clickName.equals("§cカテゴリに戻る")) {
+            EmoteCategoryGui.open(player);
+            return;
+        }
+
+        // エモートカテゴリ選択画面
+        if (title.equals("エモートカテゴリを選択")) {
+            if (clickName.equals("プレイヤーのエモート")) {
+                PlayerParticleGui.open(player, 1);
+            }
+            return;
+        }
+
+        // ブロック破壊パーティクル選択
         if (title.equals("ブロック破壊パーティクル選択")) {
             try {
                 Particle selected = Particle.valueOf(clickName);
