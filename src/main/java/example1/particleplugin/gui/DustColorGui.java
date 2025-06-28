@@ -20,10 +20,9 @@ public class DustColorGui {
 
         int slot = 0;
         for (Map.Entry<String, Particle.DustOptions> entry : DustColorPresets.COLORS.entrySet()) {
-            String colorName = entry.getKey();
-            Particle.DustOptions options = entry.getValue();
+            if (slot >= 26) break; // 0〜25スロットに基本色、26スロット目は虹色ボタン
 
-            // 色名に対応した染料アイテムを取得
+            String colorName = entry.getKey();
             Material icon = getMaterialFromColorName(colorName);
 
             ItemStack item = new ItemStack(icon);
@@ -35,11 +34,10 @@ public class DustColorGui {
                 meta.setLore(lore);
                 item.setItemMeta(meta);
             }
-
             gui.setItem(slot++, item);
         }
 
-        // 虹色選択ボタン（目立つ色で）
+        // 虹色選択ボタン
         ItemStack rainbow = new ItemStack(Material.WHITE_CONCRETE);
         ItemMeta rainbowMeta = rainbow.getItemMeta();
         if (rainbowMeta != null) {
@@ -49,7 +47,7 @@ public class DustColorGui {
             rainbowMeta.setLore(lore);
             rainbow.setItemMeta(rainbowMeta);
         }
-        gui.setItem(26, rainbow);
+        gui.setItem(26, rainbow); // 最後のスロットに設置
 
         player.openInventory(gui);
     }
@@ -71,6 +69,7 @@ public class DustColorGui {
             case "灰" -> Material.GRAY_DYE;
             case "薄灰" -> Material.LIGHT_GRAY_DYE;
             case "シアン" -> Material.CYAN_DYE;
+            case "茶" -> Material.BROWN_DYE;
             default -> Material.GRAY_DYE;
         };
     }
