@@ -6,52 +6,14 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 
-
 public class PlayerSettings {
 
-    // プレイヤーごとの通常パーティクル管理
-    private static final Map<UUID, Particle> particleMap = new HashMap<>();
-
-    // プレイヤーごとのブロック破壊パーティクル管理
-    private static final Map<UUID, Particle> blockBreakParticleMap = new HashMap<>();
-
-    // プレイヤーごとのDUSTパーティクル色管理（DustOptions）
     private static final Map<UUID, Particle.DustOptions> dustOptionsMap = new HashMap<>();
     private static final Map<UUID, Boolean> rainbowModeMap = new HashMap<>();
     private static final Map<UUID, Integer> rainbowIndexMap = new HashMap<>();
     private static final Map<UUID, Set<Particle>> selectedParticles = new HashMap<>();
 
-
-
-    // 通常パーティクルをセット
-    public static void setParticle(Player player, Particle particle) {
-        if (particle == null) {
-            particleMap.remove(player.getUniqueId());
-        } else {
-            particleMap.put(player.getUniqueId(), particle);
-        }
-    }
-
-    // 通常パーティクルを取得
-    public static Particle getParticle(Player player) {
-        return particleMap.get(player.getUniqueId());
-    }
-
-    // ブロック破壊パーティクルをセット
-    public static void setBlockBreakParticle(Player player, Particle particle) {
-        if (particle == null) {
-            blockBreakParticleMap.remove(player.getUniqueId());
-        } else {
-            blockBreakParticleMap.put(player.getUniqueId(), particle);
-        }
-    }
-
-    // ブロック破壊パーティクルを取得
-    public static Particle getBlockBreakParticle(Player player) {
-        return blockBreakParticleMap.get(player.getUniqueId());
-    }
-
-    // DUSTパーティクルの色（DustOptions）をセット
+    // DUST色セット
     public static void setDustOptions(Player player, Particle.DustOptions options) {
         if (options == null) {
             dustOptionsMap.remove(player.getUniqueId());
@@ -60,40 +22,45 @@ public class PlayerSettings {
         }
     }
 
-
-
-    // DUSTパーティクルの色（DustOptions）を取得（未設定時は白色にフォールバック）
-    public static void setRainbowMode(Player p, boolean on) {
-        rainbowModeMap.put(p.getUniqueId(), on);
-    }
-    public static boolean isRainbowMode(Player p) {
-        return rainbowModeMap.getOrDefault(p.getUniqueId(), false);
-    }
-    public static int nextRainbowIndex(Player p, int size) {
-        int idx = rainbowIndexMap.getOrDefault(p.getUniqueId(), 0);
-        idx = (idx + 1) % size;
-        rainbowIndexMap.put(p.getUniqueId(), idx);
-        return idx;
-    }
-    public static List<Particle.DustOptions> getDustOptions(Player player) {
-        return new ArrayList<>(DustColorPresets.COLORS.values());
+    // DUST色取得（未設定は白色）
+    public static Particle.DustOptions getDustOption(Player player) {
+        return dustOptionsMap.getOrDefault(player.getUniqueId(), new Particle.DustOptions(Color.WHITE, 1.0F));
     }
 
+    // 虹色モード設定
+    public static void setRainbowMode(Player player, boolean on) {
+        rainbowModeMap.put(player.getUniqueId(), on);
+    }
+
+    public static boolean isRainbowMode(Player player) {
+        return rainbowModeMap.getOrDefault(player.getUniqueId(), false);
+    }
+
+    // 虹色の次の色を取得（インデックス更新）
     public static Particle.DustOptions getNextRainbowOption(Player player) {
         List<Particle.DustOptions> options = new ArrayList<>(DustColorPresets.COLORS.values());
-        int index = nextRainbowIndex(player, options.size());
+        int index = rainbowIndexMap.getOrDefault(player.getUniqueId(), 0);
+        index = (index + 1) % options.size();
+        rainbowIndexMap.put(player.getUniqueId(), index);
         return options.get(index);
     }
-    public static Particle.DustOptions getDustOption(Player player) {
-        return dustOptionsMap.getOrDefault(player.getUniqueId(),
-                new Particle.DustOptions(Color.WHITE, 1.0F));
-    }
+
+    // パーティクル選択（最大2つまで、DUSTは重複禁止）
     public static void setParticleSelection(Player player, Particle particle) {
         Set<Particle> set = selectedParticles.getOrDefault(player.getUniqueId(), new HashSet<>());
+
         if (set.contains(particle)) {
             set.remove(particle); // もう一度押したら解除
         } else {
-            if (set.size() >= 2) return; // 最大2個まで
+            if (set.size() >= 2) {
+                player.sendMessage("§c最大2種類まで選択できます");
+                return;
+            }
+            // DUSTが既にある場合は重複不可
+            if (particle == Particle.DUST && set.contains(Particle.DUST)) {
+                player.sendMessage("§cDUSTは複数選べません");
+                return;
+            }
             set.add(particle);
         }
         selectedParticles.put(player.getUniqueId(), set);
@@ -102,6 +69,7 @@ public class PlayerSettings {
     public static Set<Particle> getSelectedParticles(Player player) {
         return selectedParticles.getOrDefault(player.getUniqueId(), Set.of());
     }
+
     public static void clearSelectedParticles(Player player) {
         selectedParticles.remove(player.getUniqueId());
     }

@@ -1,19 +1,18 @@
 package example1.particleplugin.gui;
 
 import example1.particleplugin.util.DustColorPresets;
+import example1.particleplugin.util.PlayerSettings;
+import example1.particleplugin.util.DyeUtil;
+
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import example1.particleplugin.util.DyeUtil;
 
 import java.util.*;
-
-import static example1.particleplugin.gui.EmoteCategoryGui.createItem;
 
 public class PlayerParticleGui {
 
@@ -59,7 +58,73 @@ public class PlayerParticleGui {
         // 必要なら追加
     }
 
-    public static ItemStack createNavigationItem(Material material, String name) {
+    public static void open(Player player, int page) {
+        PlayerSettings.clearSelectedParticles(player); // GUI開いたら選択リセット
+
+        int perPage = 36;
+        int total = particleIcons.size();
+        int totalPages = (int) Math.ceil(total / (double) perPage) + 1;
+
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        Inventory gui = Bukkit.createInventory(null, 54, "プレイヤーエモート - ページ " + page);
+
+        Set<Particle> selected = PlayerSettings.getSelectedParticles(player);
+
+        if (page == totalPages) {
+            int slot = 0;
+            gui.setItem(slot++, createNav(Material.WHITE_CONCRETE, "§bDUST: 虹色"));
+
+            for (String colorName : DustColorPresets.COLORS.keySet()) {
+                Material icon = DyeUtil.fromName(colorName);
+                ItemStack item = new ItemStack(icon);
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    String displayName = "§bDUST: " + colorName;
+                    if (selected.contains(Particle.DUST)) {
+                        displayName = "§a[選択済] " + displayName;
+                    }
+                    meta.setDisplayName(displayName);
+                    item.setItemMeta(meta);
+                }
+                gui.setItem(slot++, item);
+            }
+            if (page > 1) gui.setItem(45, createNav(Material.ARROW, "前のページ"));
+            gui.setItem(49, createNav(Material.BARRIER, "§cカテゴリに戻る"));
+            player.openInventory(gui);
+            return;
+        }
+
+        // 通常パーティクルリスト表示
+        List<Map.Entry<Particle, Material>> entries = new ArrayList<>(particleIcons.entrySet());
+        int start = (page - 1) * perPage;
+        int end = Math.min(start + perPage, total);
+
+        for (int i = start; i < end; i++) {
+            var entry = entries.get(i);
+            ItemStack item = new ItemStack(entry.getValue());
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                String pName = entry.getKey().name();
+                String displayName = "§b" + pName;
+                if (selected.contains(entry.getKey())) {
+                    displayName = "§a[選択済] " + displayName;
+                }
+                meta.setDisplayName(displayName);
+                item.setItemMeta(meta);
+            }
+            gui.setItem(i - start, item);
+        }
+
+        gui.setItem(49, createNav(Material.BARRIER, "§cカテゴリに戻る"));
+        if (page > 1) gui.setItem(45, createNav(Material.ARROW, "前のページ"));
+        if (page < totalPages) gui.setItem(53, createNav(Material.ARROW, "次のページ"));
+
+        player.openInventory(gui);
+    }
+
+    private static ItemStack createNav(Material material, String name) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -67,57 +132,5 @@ public class PlayerParticleGui {
             item.setItemMeta(meta);
         }
         return item;
-    }
-
-    public static void open(Player pl, int page) {
-        int per = 36, total = particleIcons.size(), pages = (int)Math.ceil(total/(double)per) + 1;
-        if (page<1) page=1; if(page>pages) page=pages;
-        Inventory gui = Bukkit.createInventory(null, 54, "プレイヤーエモート - ページ " + page);
-
-        if (page == pages) {
-            int slot=0;
-            gui.setItem(slot++, createNav(Material.WHITE_CONCRETE, "§bDUST: 虹色"));
-            for (String name : DustColorPresets.COLORS.keySet()) {
-                Material icon = DyeUtil.fromName(name);
-                ItemStack it = new ItemStack(icon);
-                ItemMeta m = it.getItemMeta();
-                m.setDisplayName("§bDUST: "+name);
-                it.setItemMeta(m);
-                gui.setItem(slot++, it);
-            }
-            if (page > 1) gui.setItem(45, createNav(Material.ARROW, "前のページ"));
-            gui.setItem(49, createNav(Material.BARRIER, "§cカテゴリに戻る"));
-            pl.openInventory(gui); return;
-        }
-
-        // 通常リスト表示
-        List<Map.Entry<Particle,Material>> es = new ArrayList<>(particleIcons.entrySet());
-        int start = (page-1)*per, end = Math.min(start+per, total);
-        for(int i=start;i<end;i++){
-            var e=es.get(i);
-            ItemStack it=new ItemStack(e.getValue());
-            ItemMeta m=it.getItemMeta();
-            m.setDisplayName("§b"+ e.getKey().name());
-            it.setItemMeta(m);
-            gui.setItem(i-start, it);
-        }
-        gui.setItem(49, createNav(Material.BARRIER, "§cカテゴリに戻る"));
-        if(page>1) gui.setItem(45, createNav(Material.ARROW,"前のページ"));
-        if(page<pages) gui.setItem(53, createNav(Material.ARROW,"次のページ"));
-        pl.openInventory(gui);
-    }
-
-    private static ItemStack createNav(Material mat, String name) {
-        ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            item.setItemMeta(meta);
-        }
-        return item;
-    }
-    public static int getTotalPages() {
-        int total = particleIcons.size(), per=36;
-        return (int)Math.ceil(total/(double)per) + 1;
     }
 }
